@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rider Eval App - 2026</title>
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(20, 20, 20, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            --primary: #D4AF37;
+            /* Classic Gold */
+            --accent: #FFFFFF;
+            --text-white: #FFFFFF;
+            --text-muted: rgba(255, 255, 255, 0.6);
+            --bg-color: #0a0a0a;
+        }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-white);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image:
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.95)),
+                url("https://www.transparenttextures.com/patterns/cubes.png");
+        }
+        /* Top Navigation Bar */
+        .nav-bar {
+            width: 100%;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        .nav-text {
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--primary);
+        }
+        /* Glass Card */
+        .app-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 480px;
+            margin: 20px auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 24px;
+            transition: transform 0.3s ease;
+        }
+        @media (max-width: 480px) {
+            .app-container {
+                margin: 0;
+                border-radius: 0;
+                min-height: calc(100vh - 55px);
+                /* Subtract nav height */
+                border: none;
+            }
+        }
+        /* Step Progress */
+        .progress-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: all 0.4s ease;
+        }
+        .dot.active {
+            background: var(--primary);
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        }
+        h2 {
+            text-align: center;
+            margin: 0 0 4px 0;
+            font-size: 1.8rem;
+            color: var(--text-white);
+            font-weight: 700;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 500;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.9;
+        }
+        /* Inputs & Modern Dropdowns */
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        input,
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            appearance: none;
+            /* Remove default arrow */
+            -webkit-appearance: none;
+        }
+        /* Custom Arrow for Select */
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath fill='white' d='M12 16L6 10H18L12 16Z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 16px;
+        }
+        select:focus,
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+        }
+        option {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 12px;
+        }
+        /* Trip Grid */
+        .trip-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .trip-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            border-radius: 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .trip-btn i {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 6px;
+            opacity: 0.4;
+            transition: all 0.2s;
+        }
+        .trip-btn.checked {
+            background: rgba(212, 175, 55, 0.15);
+            border-color: var(--primary);
+        }
+        .trip-btn.checked i {
+            opacity: 1;
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+        /* Buttons */
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-next {
+            background: var(--primary);
+            color: #000;
+        }
+        .btn-submit {
+            background: #fff;
+            color: #000;
+        }
+        .btn-back {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            width: auto;
+            flex: 1;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        .btn-action:active {
+            transform: scale(0.98);
+        }
+        .form-nav {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        /* Steps */
+        .step {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .step.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .header-logo {
+            width: 80px;
+            height: 80px;
+            background: #fff;
+            border-radius: 50%;
+            padding: 4px;
+            margin: -60px auto 10px auto;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            display: block;
+            border: 2px solid var(--primary);
+        }
+        /* Toggle Switch */
+        .toggle-switch {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 4px;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .toggle-opt {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            opacity: 0.6;
+            font-weight: 500;
+        }
+        .toggle-opt.selected {
+            background: var(--primary);
+            color: #000;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <div class="nav-text">Rider Evaluation System <span>2026</span></div>
+    </div>
+    <div class="app-container">
+        <img src="https://raw.githubusercontent.com/rucomrada/topscoreconsultants.github.io/refs/heads/main/assets/images/PHILMEDLTD.png"
+            class="header-logo" alt="Logo">
+        <h2>Philmed Ltd</h2>
+        <div class="subtitle">Performance Review</div>
+        <div class="progress-indicator">
+            <div class="dot active" id="dot1"></div>
+            <div class="dot" id="dot2"></div>
+            <div class="dot" id="dot3"></div>
+        </div>
+        <form id="glassForm" onsubmit="event.preventDefault();">
+            <!-- STEP 1 -->
+            <div id="step1" class="step active">
+                <div class="input-group">
+                    <label>Branch Office</label>
+                    <select id="branch" onchange="populateNames()" required>
+                        <option value="">Select Branch...</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Rider Name</label>
+                    <select id="name" onchange="fillDetails()" disabled required>
+                        <option value="">Select Rider...</option>
+                    </select>
+                </div>
+                <input type="hidden" id="payroll">
+                <input type="hidden" id="bike">
+                <input type="hidden" id="designation">
+                <div class="input-group">
+                    <label>Assigned Route</label>
+                    <input type="text" id="route" placeholder="Route identifier..." required>
+                </div>
+                <div class="input-group">
+                    <label>Section Unit</label>
+                    <select id="section" required>
+                        <option value="">Choose Unit...</option>
+                        <option value="PHARMA">PHARMA</option>
+                        <option value="BEIBORA">BEIBORA</option>
+                        <option value="EXPRESSWAY">EXPRESSWAY</option>
+                        <option value="FRESHCUTS">FRESHCUTS</option>
+                    </select>
+                </div>
+                <button class="btn-action btn-next" onclick="goToStep(2)">
+                    Enter Review <i class="ri-arrow-right-up-line"></i>
+                </button>
+            </div>
+            <!-- STEP 2 -->
+            <div id="step2" class="step">
+                <label style="text-align:center; margin-bottom: 25px;">Mission Completion Registry</label>
+                <div class="trip-grid">
+                    <div class="trip-btn" onclick="toggleTrip(1)" id="btn-trip1"><i class="ri-rocket-line"></i> Mission
+                        1</div>
+                    <div class="trip-btn" onclick="toggleTrip(2)" id="btn-trip2"><i class="ri-rocket-line"></i> Mission
+                        2</div>
+                    <div class="trip-btn" onclick="toggleTrip(3)" id="btn-trip3"><i class="ri-rocket-line"></i> Mission
+                        3</div>
+                    <div class="trip-btn" onclick="toggleTrip(4)" id="btn-trip4"><i class="ri-rocket-line"></i> Mission
+                        4</div>
+                    <div class="trip-btn" onclick="toggleTrip(5)" id="btn-trip5"><i class="ri-rocket-line"></i> Mission
+                        5</div>
+                    <div class="trip-btn" onclick="toggleTrip(6)" id="btn-trip6"><i class="ri-rocket-line"></i> Mission
+                        6</div>
+                </div>
+                <input type="hidden" id="trip1">
+                <input type="hidden" id="trip2">
+                <input type="hidden" id="trip3">
+                <input type="hidden" id="trip4">
+                <input type="hidden" id="trip5">
+                <input type="hidden" id="trip6">
+                <div
+                    style="text-align: center; margin: 25px 0; font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                    <span id="tripCount">0</span> TRIPS
+                </div>
+                <div class="form-nav">
+                    <button class="btn-action btn-back" onclick="goToStep(1)">Return</button>
+                    <button class="btn-action btn-next" onclick="goToStep(3)">Forward</button>
+                </div>
+            </div>
+            <!-- STEP 3 -->
+            <div id="step3" class="step">
+                <div class="input-group">
+                    <label>Fuel Consumption</label>
+                    <input type="number" id="fuel" step="0.01" placeholder="Average L/km" required>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                    <div class="input-group">
+                        <label>CODs</label>
+                        <input type="number" id="cods" placeholder="Collected" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Returns</label>
+                        <input type="number" id="returns" placeholder="Registry" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Riding Gear</label>
+                    <div class="toggle-switch" id="gearToggle">
+                        <div class="toggle-opt selected" onclick="setGear('Full')">Optimal</div>
+                        <div class="toggle-opt" onclick="setGear('Partial')">Sub-Optimal</div>
+                    </div>
+                    <input type="hidden" id="gear" value="Full">
+                </div>
+                <div class="input-group">
+                    <label>Client Satisfaction (1-10)</label>
+                    <input type="number" id="service" min="1" max="10" placeholder="Rate 1-10" required>
+                </div>
+                <div
+                    style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                    <label style="margin-bottom: 12px; color: var(--primary);">Incidents Report</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="number" id="frauds" placeholder="Fraud" style="font-size: 0.9rem;">
+                        <input type="number" id="accidents" placeholder="Accident" style="font-size: 0.9rem;">
+                        <input type="number" id="breakages" placeholder="Broken" style="font-size: 0.9rem;">
+                    </div>
+                </div>
+                <div class="form-nav">
+                    <button class="btn-action btn-back" onclick="goToStep(2)">Back</button>
+                    <button class="btn-action btn-submit" onclick="submitForm()">Submit Review</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script>
+        // --- App Logic ---
+        let employeeMap = {};
+        window.onload = function () {
+            // Fetch Branch Performance
+            google.script.run.withSuccessHandler(updateTicker).getBranchPerformance();
+            // Fecth Employee Data
+            google.script.run.withSuccessHandler(data => {
+                employeeMap = data;
+                const branchSet = new Set();
+                for (let k in data) branchSet.add(data[k].branch);
+                const sel = document.getElementById("branch");
+                branchSet.forEach(b => {
+                    let opt = document.createElement("option");
+                    opt.value = b; opt.innerText = b;
+                    sel.appendChild(opt);
+                });
+            }).getEmployeeData();
+        };
+        function updateTicker(data) {
+            const ticker = document.getElementById('ticker');
+            if (data && data.length > 0) {
+                // Duplicate for smooth loop if short
+                if (data.length < 5) data = [...data, ...data, ...data];
+                ticker.innerHTML = data.map(i => `<div class="marquee-item">${i}</div>`).join('');
+            } else {
+                ticker.innerText = "Welcome to Philmed Rider Evaluation Portal";
+            }
+        }
+        function populateNames() {
+            const branch = document.getElementById("branch").value;
+            const nameSel = document.getElementById("name");
+            nameSel.innerHTML = '<option value="">Select Rider...</option>';
+            nameSel.disabled = !branch;
+            if (branch) {
+                for (let name in employeeMap) {
+                    if (employeeMap[name].branch === branch) {
+                        nameSel.add(new Option(name, name));
+                    }
+                }
+            }
+        }
+        function fillDetails() {
+            const name = document.getElementById("name").value;
+            if (employeeMap[name]) {
+                const r = employeeMap[name];
+                document.getElementById("payroll").value = r.payrollNumber;
+                document.getElementById("bike").value = r.bike;
+                document.getElementById("designation").value = r.designation;
+                document.getElementById("route").value = r.route || "";
+            }
+        }
+        function goToStep(step) {
+            if (step === 2) {
+                if (!document.getElementById("name").value || !document.getElementById("section").value) {
+                    Swal.fire({ icon: 'error', title: 'ACCESS DENIED', text: 'Please complete all identification fields.', background: '#111', color: '#fff' });
+                    return;
+                }
+            }
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+            document.querySelectorAll('.dot').forEach((el, idx) => {
+                el.classList.toggle('active', idx < step);
+            });
+        }
+        function toggleTrip(num) {
+            const btn = document.getElementById('btn-trip' + num);
+            const input = document.getElementById('trip' + num);
+            btn.classList.toggle('checked');
+            input.value = btn.classList.contains('checked') ? "Yes" : "";
+            const count = document.querySelectorAll('.trip-btn.checked').length;
+            document.getElementById('tripCount').innerText = count;
+        }
+        function setGear(type) {
+            document.getElementById("gear").value = type;
+            const opts = document.querySelectorAll(".toggle-opt");
+            opts[0].classList.toggle('selected', type === 'Full');
+            opts[1].classList.toggle('selected', type === 'Partial');
+        }
+        let isSubmitting = false;
+        function resetForm() {
+            // Reset core state
+            isSubmitting = false;
+            // Return to first step
+            goToStep(1);
+            // Clear all basic inputs
+            document.getElementById("glassForm").reset();
+            // Clear specific hidden or complex fields
+            document.getElementById("payroll").value = "";
+            document.getElementById("bike").value = "";
+            document.getElementById("designation").value = "";
+            document.getElementById("name").disabled = true;
+            document.getElementById("tripCount").innerText = "0";
+            // Reset trip buttons
+            document.querySelectorAll('.trip-btn').forEach(btn => btn.classList.remove('checked'));
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById('trip' + i).value = "";
+            }
+            // Reset gear toggle
+            setGear('Full');
+            // Re-enable submit button
+            const submitBtn = document.querySelector('.btn-submit');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Submit Review';
+            }
+        }
+        function submitForm() {
+            if (isSubmitting) return;
+            const reqFields = ['fuel', 'cods', 'service'];
+            for (let id of reqFields) {
+                if (!document.getElementById(id).value) {
+                    Swal.fire({ icon: 'warning', text: 'Please complete all fields.', background: '#1a1a1a', color: '#fff' });
+                    return;
+                }
+            }
+            isSubmitting = true;
+            const submitBtn = document.querySelector('.btn-submit');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Processing...';
+            }
+            const formData = {
+                branch: document.getElementById("branch").value,
+                name: document.getElementById("name").value,
+                payrollNumber: document.getElementById("payroll").value,
+                bike: document.getElementById("bike").value,
+                designation: document.getElementById("designation").value,
+                route: document.getElementById("route").value,
+                achievedTrips: document.getElementById('tripCount').innerText,
+                fuelAvg: document.getElementById("fuel").value,
+                cods: document.getElementById("cods").value,
+                frauds: document.getElementById("frauds").value || 0,
+                breakages: document.getElementById("breakages").value || 0,
+                accidents: document.getElementById("accidents").value || 0,
+                customerService: document.getElementById("service").value,
+                ridingGear: document.getElementById("gear").value,
+                returns: document.getElementById("returns").value,
+                section: document.getElementById("section").value,
+                trips: []
+            };
+            for (let i = 1; i <= 6; i++) {
+                formData.trips.push(document.getElementById('trip' + i).value === "Yes" ? "Yes" : "No");
+            }
+            Swal.fire({ title: 'UPLOADING', background: '#1a1a1a', color: '#fff', didOpen: () => Swal.showLoading() });
+            google.script.run
+                .withSuccessHandler(() => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'SUCCESS',
+                        text: 'Evaluation Logged.',
+                        background: '#1a1a1a',
+                        color: '#fff',
+                        confirmButtonColor: '#D4AF37',
+                        confirmButtonText: 'New Review'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                })
+                .withFailureHandler(err => {
+                    isSubmitting = false;
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Submit Review';
+                    }
+                    Swal.fire({ icon: 'error', text: err.message, background: '#1a1a1a', color: '#fff' });
+                })
+                .submitForm(formData);
+        }
+    </script>
+</body>
+</html>
