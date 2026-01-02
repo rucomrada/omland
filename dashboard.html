@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1, h2, h3 {
+      text-align: center;
+      margin: 0;
+      padding: 20px 0;
+      color: #4CAF50;
+    }
+
+    #clock {
+      text-align: right;
+      padding: 10px 20px;
+      font-size: 1.2em;
+      color: #aaa;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #1e1e1e;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+
+    #scroll-container {
+      height: 850px;
+      overflow-y: auto;
+      overflow-x: auto;
+      width: 95%;
+      margin: 0 auto;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background-color: #1e1e1e;
+      z-index: 2;
+    }
+
+    .top-performer {
+      background-color: #4CAF50;
+      font-weight: bold;
+      color: #000;
+    }
+
+    .mid-performer {
+      background-color: #FFC107;
+      color: #000;
+    }
+
+    .low-performer {
+      background-color: #F44336;
+      color: #fff;
+      animation: flash 1s infinite alternate;
+    }
+
+    @keyframes flash {
+      from { background-color: #F44336; }
+      to { background-color: #FF6E6E; }
+    }
+
+    #scoreChart {
+      max-width: 90%;
+      margin: 40px auto;
+    }
+
+    #branchSlide {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 5px 20px;
+      opacity: 0;
+      transition: opacity 0.8s ease-in-out;
+    }
+
+    #branchSlide.visible {
+      opacity: 1;
+    }
+
+    .branch-card {
+      background-color: #1f1f1f;
+      padding: 5px 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      transition: transform 0.4s ease;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    .branch-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .branch-card ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .branch-card li {
+      padding: 8px 0;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.05em;
+    }
+
+    .branch-card img {
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+    }
+
+    .badge {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: bold;
+      margin-left: auto;
+    }
+
+    .badge.green { background-color: #4CAF50; color: #000; }
+    .badge.amber { background-color: #FFC107; color: #000; }
+    .badge.red { background-color: #F44336; color: #fff; }
+
+    @keyframes fadeIn {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    #branchSummary {
+      text-align: center;
+      margin: 40px auto;
+      font-size: 1.1em;
+      max-width: 800px;
+    }
+
+    #branchSummary ul {
+      list-style: none;
+      padding: 0;
+      columns: 2;
+      column-gap: 40px;
+      max-height: 500px;
+    }
+
+    #branchSummary li {
+      padding: 5px 0;
+      border-bottom: 1px solid #333;
+      list-style-type: none;
+    }
+
+    #musicBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: #4CAF50;
+      color: #000;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🎶 Background Music -->
+  <audio autoplay loop muted id="bgMusic">
+    <source src="https://djmixes.co.ke/wp-content/uploads/2023/08/Dj-Fabian-Rhumba-Mix.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+  <button id="musicBtn" onclick="toggleMusic()">🎵 Toggle Music</button>
+
+  <!-- Page 1: Main Table -->
+  <div id="page1">
+    <h1>
+      <img src="https://cargen.com/wp-content/uploads/2024/10/CG-April-11.png" alt="Logo" style="height: 40px; vertical-align: middle; margin-right: 10px;">
+      Rider Performance Dashboard
+    </h1>
+    <div id="clock">Loading time...</div>
+
+    <div id="scroll-container">
+      <table id="riderTable">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>Payroll #</th>
+            <th>Branch</th>
+            <th>Trips</th>
+            <th>Fuel Avg</th>
+            <th>% Trips Ach</th>
+            <th>Trip Points</th>
+            <th>Fuel Points</th>
+            <th>Avg Score</th>
+            <th>% Score</th>
+          </tr>
+        </thead>
+        <tbody id="dataBody"></tbody>
+      </table>
+    </div>
+
+    <button onclick="readTopPerformers()">🔊 Read Top Performers</button>
+    <canvas id="scoreChart"></canvas>
+  </div>
+
+  <!-- Page 2: Branch Cards -->
+  <div id="page2" style="display:none;">
+    <h2>
+      <img src="https://images.protrack365.com/portrait/139/1397733_portrait_202505111427234_77.PNG" alt="Branch" style="height: 30px; vertical-align: middle; margin-right: 8px;">
+      Branch-wise Top Performers
+    </h2>
+    <div id="branchSlide"></div>
+    <div id="branchSummary"></div>
+  </div>
+
+  <!-- Page 3: Fuel Overview -->
+  <div id="page3" style="display:none;">
+    <h2 style="text-align:center; color:#4CAF50;">⛽ Fuel Efficiency Overview</h2>
+    <div id="fuelContainer" style="height: 900px; overflow-y: auto; overflow-x: auto; width: 95%; margin: 0 auto;">
+      <table id="fuelTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Branch</th>
+            <th>Fuel Avg</th>
+          </tr>
+        </thead>
+        <tbody id="fuelBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('clock').textContent = `⏱️ ${now.toLocaleTimeString()}`;
+    }, 1000);
+
+    let chartInstance;
+    let branchSlides = [];
+    let cachedData = [];
+
+function fetchAndDisplay() {
+  google.script.run
+    .withSuccessHandler(() => {
+      google.script.run
+        .withSuccessHandler(displayData)
+        .getAnalysisData();
+    })
+    .updateAnalysisSheet();
+}
+
+    fetchAndDisplay();
+    setInterval(fetchAndDisplay, 30000);
+
+    function displayData(data) {
+      cachedData = data;
+      const tbody = document.getElementById('dataBody');
+      tbody.innerHTML = '';
+
+      const labels = [], scores = [], branchSections = {};
+      branchSlides = [];
+
+      data.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className =
+          r.percentScore >= 85 ? 'top-performer' :
+          r.percentScore >= 70 ? 'mid-performer' :
+          'low-performer';
+
+        tr.innerHTML = `
+          <td><img src="${r.photo}" width="40" height="40" style="border-radius:50%;"/></td>
+          <td>${r.name}</td>
+          <td>${r.payroll}</td>
+          <td>${r.branch}</td>
+          <td>${r.trips}</td>
+          <td>${r.fuelAvg}</td>
+          <td>${r.avgTripPercent}</td>
+          <td>${r.tripPoints}</td>
+          <td>${r.fuelPoints}</td>
+          <td>${r.avgScore}</td>
+          <td>${r.percentScore.toFixed(2)}%</td>
+        `;
+        tbody.appendChild(tr);
+
+        labels.push(r.name);
+        scores.push(r.percentScore);
+        if (!branchSections[r.branch]) branchSections[r.branch] = [];
+        branchSections[r.branch].push(r);
+      });
+
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(document.getElementById('scoreChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: '% Score',
+            data: scores,
+            backgroundColor: scores.map(score =>
+              score >= 85 ? '#4CAF50' : score >= 70 ? '#FFC107' : '#F44336'
+            )
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+
+      const branchAverages = [];
+      for (const branch in branchSections) {
+        const riders = branchSections[branch];
+        const avgScore = riders.reduce((sum, r) => sum + r.percentScore, 0) / riders.length;
+        branchAverages.push({
+          branch,
+          avgScore,
+          riders: riders.sort((a, b) => b.percentScore - a.percentScore).slice(0, 3)
+        });
+      }
+
+      branchAverages.sort((a, b) => b.avgScore - a.avgScore);
+      const medals = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅'];
+      branchSlides = branchAverages.slice(0, 28).map((entry, index) => `
+        <div class="branch-card">
+          <h3>${medals[index]} ${entry.branch} Branch</h3>
+          <p>Average Score: <strong>${entry.avgScore.toFixed(2)}%</strong></p>
+          <ul>
+            ${entry.riders.map((r, i) => `
+              <li>
+                <img src="${r.photo}" alt="${r.name}"> ${i + 1}. ${r.name}
+                <span class="badge ${r.percentScore >= 85 ? 'green' : r.percentScore >= 70 ? 'amber' : 'red'}">
+                  ${r.percentScore.toFixed(2)}%
+                </span>
+              </li>`).join('')}
+          </ul>
+        </div>
+      `);
+
+      document.getElementById('branchSummary').innerHTML = `
+        <h3>🏆 Overall Branch Performance Summary</h3>
+        <ul>
+          ${branchAverages.map((b, i) => `
+            <li>${i + 1}. <strong>${b.branch}</strong> – Average Score: <strong>${b.avgScore.toFixed(2)}%</strong></li>
+          `).join('')}
+        </ul>
+      `;
+    }
+
+    function readTopPerformers() {
+      const synth = window.speechSynthesis;
+      const voices = synth.getVoices();
+      const africanVoice = voices.find(v => v.lang === 'en-ZA' || v.name.includes('Lekha') || v.name.includes('South') || v.name.includes('Google UK'));
+      const rows = document.querySelectorAll('#riderTable tbody tr');
+      let message = "Here are the top 5 performers: ";
+      for (let i = 0; i < Math.min(rows.length, 5); i++) {
+        const cells = rows[i].querySelectorAll('td');
+        if (cells.length > 0) {
+          const name = cells[1].textContent.trim();
+          const branch = cells[3].textContent.trim();
+          const score = cells[10].textContent.trim();
+          message += `${i + 1}. ${name}, from ${branch} branch, with a score of ${score}. `;
+        }
+      }
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.rate = 1;
+      if (africanVoice) utterance.voice = africanVoice;
+      synth.cancel();
+      synth.speak(utterance);
+    }
+
+    function toggleMusic() {
+      const music = document.getElementById('bgMusic');
+      music.muted = !music.muted;
+      if (!music.muted) music.play();
+    }
+
+    // Auto page rotation
+    function switchPage(pageNumber) {
+      for (let i = 1; i <= 3; i++) document.getElementById(`page${i}`).style.display = i === pageNumber ? 'block' : 'none';
+
+if (pageNumber === 1) {
+  window.scrollTo(0, 0);
+
+  const scrollContainer = document.getElementById('scroll-container');
+  scrollContainer.scrollTop = 0;
+
+  let scrollInterval = setInterval(() => {
+    if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight) {
+      scrollContainer.scrollTop = 0;
+    } else {
+      scrollContainer.scrollTop += 1;
+    }
+  }, 30);
+
+  setTimeout(() => {
+    clearInterval(scrollInterval);
+    switchPage(2);
+  }, 180000);
+
+} else if (pageNumber === 2) {
+  updateBranchSlide(); // Initial
+  let branchInterval = setInterval(updateBranchSlide, 6000); // every 6s
+  setTimeout(() => {
+    clearInterval(branchInterval);
+    switchPage(3);
+  }, 180000);
+
+      } else if (pageNumber === 3) {
+        if (!cachedData.length) return setTimeout(() => switchPage(3), 180000);
+        displayFuelTable(cachedData);
+        const fuelContainer = document.getElementById('fuelContainer');
+        fuelContainer.scrollTop = 0;
+        let interval = setInterval(() => {
+          if (fuelContainer.scrollTop + fuelContainer.clientHeight >= fuelContainer.scrollHeight) {
+            fuelContainer.scrollTop = 0;
+          } else {
+            fuelContainer.scrollTop += 1;
+          }
+        }, 30);
+        setTimeout(() => {
+          clearInterval(interval);
+          switchPage(1);
+        }, 180000);
+      }
+    }
+
+    function updateBranchSlide() {
+      const slideDiv = document.getElementById('branchSlide');
+      if (!branchSlides.length) return;
+      slideDiv.classList.remove('visible');
+      setTimeout(() => {
+        slideDiv.innerHTML = branchSlides[branchSlideIndex];
+        slideDiv.classList.add('visible');
+        branchSlideIndex = (branchSlideIndex + 1) % branchSlides.length;
+      }, 200);
+    }
+
+    function displayFuelTable(data) {
+      const fuelBody = document.getElementById('fuelBody');
+      fuelBody.innerHTML = '';
+      data.forEach(r => {
+        const fuelVal = parseFloat(r.fuelAvg);
+        const bgColor = fuelVal > 3.3 ? '#F44336' : '#4CAF50';
+        fuelBody.innerHTML += `
+          <tr>
+            <td>${r.name}</td>
+            <td>${r.branch}</td>
+            <td style="background-color: ${bgColor}; color: #fff; font-weight: bold;">${r.fuelAvg}</td>
+          </tr>
+        `;
+      });
+    }
+
+    let branchSlideIndex = 0;
+    window.onload = () => switchPage(1);
+  </script>
+</body>
+</html>
